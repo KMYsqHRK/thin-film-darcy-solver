@@ -1,0 +1,49 @@
+{
+    "input_pressure_file": "input_edge_pressure.csv",
+    "output_lift_force_file": "output_lift_forces.csv",
+    "output_pressure_grid_file": "output_pressure_grid.csv",
+
+    "division_number": 10,
+
+    "boundary_points": [
+        {
+            "name": "Point1",
+            "position": {"x": 0.0, "y": 0.0, "z": 0.0}
+        },
+        {
+            "name": "Point2",
+            "position": {"x": 1.0, "y": 0.0, "z": 0.0}
+        },
+        {
+            "name": "Point3",
+            "position": {"x": 0.0, "y": 1.0, "z": 0.0}
+        }
+    ],
+
+    "gravity": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 9.8
+    },
+
+    "rotation_center": {
+        "x": 0.5,
+        "y": 0.5,
+        "z": 0.0
+    },
+
+    "infiltration": {
+        "hydraulic_conductivity": 1.0e-10,
+        "kinematic_viscosity_coefficient": 1.0e-6
+    },
+
+    "pressure_grid_export": {
+        "save_interval": 1,
+        "include_wet_dry": true
+    },
+
+    "solver": {
+        "max_iterations": 1000,
+        "tolerance": 1e-6
+    }
+}
