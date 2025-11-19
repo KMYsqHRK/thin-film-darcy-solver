@@ -5,10 +5,6 @@ obj/
 # IDE directories
 .vscode/
 
-# Output files
-*.csv
-pressure_results.csv
-
 # Compiled binaries
 *.o
 *.exe
