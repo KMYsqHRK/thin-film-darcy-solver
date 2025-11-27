@@ -22,7 +22,7 @@ void Solver::load_settings(const std::string& filename)
     m_settings.output_pressure_grid_file = "output_pressure_grid.csv";
     m_settings.division_number = 5;
     m_settings.hydraulic_conductivity = 1.0;
-    m_settings.kinematic_viscosity_coefficient = 1.0e-6;
+    m_settings.viscosity_coefficient = 1.0e-3;
 
     // Gravity defaults
     m_settings.gravity[0] = 0.0;
@@ -124,8 +124,8 @@ void Solver::load_settings(const std::string& filename)
             if (infiltration_config.contains("hydraulic_conductivity")) {
                 m_settings.hydraulic_conductivity = infiltration_config["hydraulic_conductivity"];
             }
-            if (infiltration_config.contains("kinematic_viscosity_coefficient")) {
-                m_settings.kinematic_viscosity_coefficient = infiltration_config["kinematic_viscosity_coefficient"];
+            if (infiltration_config.contains("viscosity_coefficient")) {
+                m_settings.viscosity_coefficient = infiltration_config["viscosity_coefficient"];
             }
         }
 
@@ -432,7 +432,7 @@ void Solver::update_infil_distance_matrix(const Eigen::MatrixXd& pressure_matrix
     int n = m_settings.division_number;
     for (int i=0; i <= n; ++i){
         for (int j=0; j <= n; ++j){
-            m_grid_infil_distance(i,j) += m_settings.hydraulic_conductivity * pressure_matrix(i,j) * dt / m_settings.kinematic_viscosity_coefficient;
+            m_grid_infil_distance(i,j) += m_settings.hydraulic_conductivity * pressure_matrix(i,j) * dt / m_settings.viscosity_coefficient;
         }
     }
 }

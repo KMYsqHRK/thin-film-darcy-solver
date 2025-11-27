@@ -33,7 +33,7 @@ struct Settings {
 
     // Solver parameters
     double hydraulic_conductivity;            // Darcy's law permeability coefficient
-    double kinematic_viscosity_coefficient;   // Kinematic viscosity coefficient
+    double viscosity_coefficient;   // Kinematic viscosity coefficient
 
     double gravity[3];                        // Gravity vector
     double rotation_center[3];                // Rotation center for torque calculation
