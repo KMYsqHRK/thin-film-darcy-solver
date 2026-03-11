@@ -1,0 +1,18 @@
+# Build directories
+bin/
+obj/
+output/
+
+# IDE directories
+.vscode/
+
+# Compiled binaries
+*.o
+*.exe
+pw.executable.example
+
+# Temporary files
+*.tmp
+*.log
+
+third_party/
