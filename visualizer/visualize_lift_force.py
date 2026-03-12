@@ -79,6 +79,7 @@ def plot(cases: list[tuple[str, pd.DataFrame]], out_path: Path) -> None:
 
     for label, df in cases:
         ax.plot(df["Time"], df["LiftForce"], label=label, linewidth=1.5)
+    
     t = np.linspace(0, 20, 2000)  # 時間範囲は適宜調整
     P = np.sqrt(2 * 1.0e-8 * 49000 * t / 0.001) * 49000 * 10 * 0.5
     ax.plot(t, P, color="#575757", linewidth=2, label="Theoretical", linestyle='--')
