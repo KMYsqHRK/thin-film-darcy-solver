@@ -2,6 +2,7 @@
 bin/
 obj/
 output/
+output_2/
 
 # IDE directories
 .vscode/
