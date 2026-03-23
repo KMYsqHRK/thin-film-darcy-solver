@@ -9,10 +9,10 @@ plt.rcParams['axes.unicode_minus'] = False
 
 
 # データ読み込み（パスは適宜変更してください）
-df = pd.read_csv('../output/50*50_dt0.001/output_pressure_grid.csv')
+df = pd.read_csv('../output_3/50*50_dt0.002/output_pressure_grid.csv')
 
 # プロットする時刻（5.0-6.5秒、0.3秒毎）
-times_to_plot = [0, 4, 8, 12, 16, 20]
+times_to_plot = [0, 10, 20, 40, 50, 60]
 
 # 3行2列のサブプロット作成
 fig = plt.figure(figsize=(8.3, 10))

@@ -38,12 +38,12 @@ DEFAULTS = {
     "solver_output_dir": "output",
 
     # Geometry (three corner points of the parallelogram domain)
-    "point1": [-5.0, -5.0, 0.0],   # origin
-    "point2": [ 5.0, -5.0, 0.0],   # x-direction edge
-    "point3": [-5.0,  5.0, 0.0],   # y-direction edge
+    "point1": [-3.0, -3.0, 0.0],   # origin
+    "point2": [ 3.0, -3.0, 0.0],   # x-direction edge
+    "point3": [-3.0,  3.0, 0.0],   # y-direction edge
 
     # Grid resolution
-    "division_number": 50,
+    "division_number": 10,
 
     # Boundary conditions per edge: "dirichlet" or "neumann"
     "bc_bottom": "dirichlet",
@@ -67,7 +67,7 @@ DEFAULTS = {
 
     # Time-series parameters
     "t_start": 0.0,
-    "t_end":   20.0,
+    "t_end":   60.0,
     "dt":      0.002,
 
     # Pressure profile (applied to Dirichlet edges)
@@ -75,8 +75,8 @@ DEFAULTS = {
     # "linear"   : linearly decreasing from p_max to p_min
     # "sine"     : sinusoidal variation
     "pressure_profile": "constant",
-    "p_bottom_max": 49000.0,
-    "p_bottom_min": 49000.0,
+    "p_bottom_max": 29400.0,
+    "p_bottom_min": 29400.0,
     "p_top_max":    0.0,
     "p_top_min":    0.0,
 }

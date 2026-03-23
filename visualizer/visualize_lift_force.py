@@ -35,7 +35,6 @@ plt.style.use(["science", "ieee"])
 
 FILENAME = "output_lift_forces.csv"
 
-
 def find_csv_files(root: Path) -> list[tuple[str, Path]]:
     """
     Return list of (case_label, csv_path).
@@ -75,22 +74,22 @@ def load(csv_path: Path) -> pd.DataFrame:
 
 
 def plot(cases: list[tuple[str, pd.DataFrame]], out_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(6, 3))
+    fig, ax = plt.subplots(figsize=(5.6, 2.8))
 
     for label, df in cases:
-        ax.plot(df["Time"], df["LiftForce"], label=label, linewidth=1.5)
+        ax.plot(df["Time"], df["LiftForce"], label=label, linewidth=1.0, linestyle='-')
     
-    t = np.linspace(0, 20, 2000)  # 時間範囲は適宜調整
+    t = np.linspace(0, 60, 2000)  # 時間範囲は適宜調整
     P = np.sqrt(2 * 1.0e-8 * 49000 * t / 0.001) * 49000 * 10 * 0.5
-    ax.plot(t, P, color="#575757", linewidth=2, label="Theoretical", linestyle='--')
+    ax.plot(t, P, color="#575757", linewidth=1.2, label="Theoretical", linestyle='--')
     ax.set_xlabel("Time [s]", fontsize=12)
     ax.set_ylabel("Lift Force [N]", fontsize=12)
     ax.tick_params(axis="both", which="major", labelsize=12)
     #ax.set_title("Time vs Lift Force", fontsize=13, fontweight="bold")
     ax.legend(fontsize=10)
     ax.grid(True, linestyle="--", alpha=0.5)
-    ax.set_xlim(-0.1, 20)
-    ax.set_ylim(0, 1200000)
+    ax.set_xlim(-0.1, 60)
+    ax.set_ylim(0, 2500000)
     plt.tight_layout()
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     print(f"Figure saved: {out_path}")
@@ -99,7 +98,7 @@ def plot(cases: list[tuple[str, pd.DataFrame]], out_path: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Plot Time vs LiftForce for multiple cases.")
-    parser.add_argument("root_dir", nargs="?", default="../output",
+    parser.add_argument("root_dir", nargs="?", default="../output_3",
                         help="Root directory to search (default: ../output)")
     args = parser.parse_args()
 
