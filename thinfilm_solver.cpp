@@ -710,16 +710,18 @@ Eigen::SparseMatrix<double> Solver::create_coefficient_matrix(int n, const Eigen
     triplets.reserve(9 * wet_point_count);  // Estimate for 9-point stencil
 
     std::cout << "Building compressed coefficient matrix for " << wet_point_count
-              << " points (wet interior + Neumann boundaries, 9-point stencil)..." << std::endl;
+              << " points (wet interior + Neumann boundaries, 5-point stencil)..." << std::endl;
 
-    // Calculate grid spacing for Neumann BC
+    // Calculate grid spacing for Neumann BC and interior stencil
     double lattice_x = std::abs(m_settings.boundary_points[1].x - m_settings.boundary_points[0].x);
     double lattice_y = std::abs(m_settings.boundary_points[2].y - m_settings.boundary_points[0].y);
     double dx = lattice_x / n;
     double dy = lattice_y / n;
+    const double inv_dy2 = 1.0 / (dy * dy);
+    const double inv_dx2 = 1.0 / (dx * dx);
 
     // Create coefficient matrix for 2D Poisson equation using finite differences
-    // For each wet interior point, apply standard 9-point stencil
+    // For each wet interior point, apply standard 5-point stencil with dx/dy scaling
     // At wet-dry interfaces, apply P=0 Dirichlet boundary condition
     // At Neumann boundaries, apply gradient condition
     for (int i = 0; i <= n; ++i) {
@@ -770,23 +772,23 @@ Eigen::SparseMatrix<double> Solver::create_coefficient_matrix(int n, const Eigen
                 }
             }
 
-            // Interior point: apply standard 9-point stencil
+            // Interior point: apply standard 5-point stencil with dx/dy scaling
+            // Discretizes: ∂²P/∂y² + ∂²P/∂x² = 0
+            // => (P[i-1,j] - 2P[i,j] + P[i+1,j]) / dy²
+            //  + (P[i,j-1] - 2P[i,j] + P[i,j+1]) / dx²  = 0
 
             double diagonal_value = 0.0;
-
-            // 9-point stencil: check all 8 neighbors (4 direct + 4 diagonal)
-            // Direct neighbors (N, S, E, W) and diagonal neighbors (NE, NW, SE, SW)
 
             // South neighbor (i-1, j)
             if (i > 0) {
                 if (wet_dry_matrix(i-1, j) > 0.5 && grid_to_compressed(i-1, j) >= 0) {
                     // Wet neighbor - add to matrix
                     int col = grid_to_compressed(i-1, j);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
+                    triplets.emplace_back(row, col, inv_dy2);
+                    diagonal_value -= inv_dy2;
                 } else {
                     // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
+                    diagonal_value -= inv_dy2;
                 }
             }
 
@@ -795,11 +797,11 @@ Eigen::SparseMatrix<double> Solver::create_coefficient_matrix(int n, const Eigen
                 if (wet_dry_matrix(i+1, j) > 0.5 && grid_to_compressed(i+1, j) >= 0) {
                     // Wet neighbor - add to matrix
                     int col = grid_to_compressed(i+1, j);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
+                    triplets.emplace_back(row, col, inv_dy2);
+                    diagonal_value -= inv_dy2;
                 } else {
                     // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
+                    diagonal_value -= inv_dy2;
                 }
             }
 
@@ -808,11 +810,11 @@ Eigen::SparseMatrix<double> Solver::create_coefficient_matrix(int n, const Eigen
                 if (wet_dry_matrix(i, j-1) > 0.5 && grid_to_compressed(i, j-1) >= 0) {
                     // Wet neighbor - add to matrix
                     int col = grid_to_compressed(i, j-1);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
+                    triplets.emplace_back(row, col, inv_dx2);
+                    diagonal_value -= inv_dx2;
                 } else {
                     // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
+                    diagonal_value -= inv_dx2;
                 }
             }
 
@@ -821,63 +823,11 @@ Eigen::SparseMatrix<double> Solver::create_coefficient_matrix(int n, const Eigen
                 if (wet_dry_matrix(i, j+1) > 0.5 && grid_to_compressed(i, j+1) >= 0) {
                     // Wet neighbor - add to matrix
                     int col = grid_to_compressed(i, j+1);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
+                    triplets.emplace_back(row, col, inv_dx2);
+                    diagonal_value -= inv_dx2;
                 } else {
                     // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
-                }
-            }
-
-            // Southwest neighbor (i-1, j-1)
-            if (i > 0 && j > 0) {
-                if (wet_dry_matrix(i-1, j-1) > 0.5 && grid_to_compressed(i-1, j-1) >= 0) {
-                    // Wet neighbor - add to matrix
-                    int col = grid_to_compressed(i-1, j-1);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
-                } else {
-                    // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
-                }
-            }
-
-            // Southeast neighbor (i-1, j+1)
-            if (i > 0 && j < n) {
-                if (wet_dry_matrix(i-1, j+1) > 0.5 && grid_to_compressed(i-1, j+1) >= 0) {
-                    // Wet neighbor - add to matrix
-                    int col = grid_to_compressed(i-1, j+1);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
-                } else {
-                    // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
-                }
-            }
-
-            // Northwest neighbor (i+1, j-1)
-            if (i < n && j > 0) {
-                if (wet_dry_matrix(i+1, j-1) > 0.5 && grid_to_compressed(i+1, j-1) >= 0) {
-                    // Wet neighbor - add to matrix
-                    int col = grid_to_compressed(i+1, j-1);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
-                } else {
-                    // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
-                }
-            }
-
-            // Northeast neighbor (i+1, j+1)
-            if (i < n && j < n) {
-                if (wet_dry_matrix(i+1, j+1) > 0.5 && grid_to_compressed(i+1, j+1) >= 0) {
-                    // Wet neighbor - add to matrix
-                    int col = grid_to_compressed(i+1, j+1);
-                    triplets.emplace_back(row, col, 1.0);
-                    diagonal_value -= 1.0;
-                } else {
-                    // Dry neighbor or original boundary - P=0 Dirichlet BC (no contribution)
-                    diagonal_value -= 1.0;
+                    diagonal_value -= inv_dx2;
                 }
             }
 
@@ -916,8 +866,14 @@ Eigen::VectorXd Solver::construct_rhs_vector(const Eigen::MatrixXd& boundary_mat
 
     Eigen::VectorXd rhs = Eigen::VectorXd::Zero(wet_point_count);
 
+    // Precompute grid spacing (same as coefficient matrix)
+    double lattice_x_rhs = std::abs(m_settings.boundary_points[1].x - m_settings.boundary_points[0].x);
+    double lattice_y_rhs = std::abs(m_settings.boundary_points[2].y - m_settings.boundary_points[0].y);
+    const double inv_dy2_rhs = (double)n * n / (lattice_y_rhs * lattice_y_rhs);
+    const double inv_dx2_rhs = (double)n * n / (lattice_x_rhs * lattice_x_rhs);
+
     std::cout << "Building compressed RHS vector for " << wet_point_count
-              << " points (wet interior + Neumann boundaries, 9-point stencil)..." << std::endl;
+              << " points (wet interior + Neumann boundaries, 5-point stencil)..." << std::endl;
 
     // Helper function to get boundary value from the 4n boundary values vector
     auto get_boundary_value = [&](int i, int j, int n) -> double {
@@ -963,108 +919,34 @@ Eigen::VectorXd Solver::construct_rhs_vector(const Eigen::MatrixXd& boundary_mat
                 }
             }
 
-            // Interior point: add boundary contributions
-
-            // Add boundary contributions (negative because moved to RHS)
-            // The boundary can be either:
-            // 1. Original boundary (i=0, i=n, j=0, j=n) with measured pressure
-            // 2. Wet-dry interface with P=0 (Dirichlet BC)
-
-            // Direct neighbors (4-point contribution)
+            // Interior point: add boundary contributions (5-point stencil with scaling)
+            // When a neighbor is a fixed Dirichlet boundary, its known value moves to the RHS:
+            //   coefficient * P_boundary is subtracted from RHS.
+            // Wet-dry interface (P=0) contributes nothing.
 
             // South neighbor (i-1, j)
-            if (i > 0) {
-                if (i-1 == 0) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(0, j);
-                } else if (wet_dry_matrix(i-1, j) < 0.5 || grid_to_compressed(i-1, j) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
+            if (i > 0 && (i-1 == 0) && get_boundary_condition_type(0, j, n) == BoundaryConditionType::DIRICHLET) {
+                rhs(idx) -= inv_dy2_rhs * boundary_matrix(0, j);
             }
 
             // North neighbor (i+1, j)
-            if (i < n) {
-                if (i+1 == n) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(n, j);
-                } else if (wet_dry_matrix(i+1, j) < 0.5 || grid_to_compressed(i+1, j) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
+            if (i < n && (i+1 == n) && get_boundary_condition_type(n, j, n) == BoundaryConditionType::DIRICHLET) {
+                rhs(idx) -= inv_dy2_rhs * boundary_matrix(n, j);
             }
 
             // West neighbor (i, j-1)
-            if (j > 0) {
-                if (j-1 == 0) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(i, 0);
-                } else if (wet_dry_matrix(i, j-1) < 0.5 || grid_to_compressed(i, j-1) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
+            if (j > 0 && (j-1 == 0) && get_boundary_condition_type(i, 0, n) == BoundaryConditionType::DIRICHLET) {
+                rhs(idx) -= inv_dx2_rhs * boundary_matrix(i, 0);
             }
 
             // East neighbor (i, j+1)
-            if (j < n) {
-                if (j+1 == n) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(i, n);
-                } else if (wet_dry_matrix(i, j+1) < 0.5 || grid_to_compressed(i, j+1) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
-            }
-
-            // Diagonal neighbors (4-point contribution for 9-point stencil)
-
-            // Southwest neighbor (i-1, j-1)
-            if (i > 0 && j > 0) {
-                if ((i-1 == 0 || j-1 == 0)) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(i-1, j-1);
-                } else if (wet_dry_matrix(i-1, j-1) < 0.5 || grid_to_compressed(i-1, j-1) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
-            }
-
-            // Southeast neighbor (i-1, j+1)
-            if (i > 0 && j < n) {
-                if ((i-1 == 0 || j+1 == n)) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(i-1, j+1);
-                } else if (wet_dry_matrix(i-1, j+1) < 0.5 || grid_to_compressed(i-1, j+1) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
-            }
-
-            // Northwest neighbor (i+1, j-1)
-            if (i < n && j > 0) {
-                if ((i+1 == n || j-1 == 0)) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(i+1, j-1);
-                } else if (wet_dry_matrix(i+1, j-1) < 0.5 || grid_to_compressed(i+1, j-1) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
-            }
-
-            // Northeast neighbor (i+1, j+1)
-            if (i < n && j < n) {
-                if ((i+1 == n || j+1 == n)) {
-                    // Original boundary
-                    rhs(idx) -= boundary_matrix(i+1, j+1);
-                } else if (wet_dry_matrix(i+1, j+1) < 0.5 || grid_to_compressed(i+1, j+1) < 0) {
-                    // Wet-dry interface: P=0 (no contribution to RHS)
-                    rhs(idx) -= 0.0;
-                }
+            if (j < n && (j+1 == n) && get_boundary_condition_type(i, n, n) == BoundaryConditionType::DIRICHLET) {
+                rhs(idx) -= inv_dx2_rhs * boundary_matrix(i, n);
             }
         }
     }
 
-    std::cout << "Compressed RHS vector constructed with " << wet_point_count << " elements (including Neumann BCs)" << std::endl;
+    std::cout << "Compressed RHS vector constructed with " << wet_point_count << " elements (5-point stencil, including Neumann BCs)" << std::endl;
     return rhs;
 }
 
