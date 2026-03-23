@@ -76,10 +76,10 @@ def plot(cases: list[tuple[str, pd.DataFrame]], out_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6, 3))
 
     for label, df in cases:
-        ax.plot(df["Time"], df["LiftForce"], label=label, linewidth=1.5)
+        ax.plot(df["Time"], df["LiftForce"], label=label, linewidth=1.5, linestyle="-")
     t = np.linspace(0, 20, 2000)  # 時間範囲は適宜調整
     P = np.sqrt(2 * 1.0e-8 * 49000 * t / 0.001) * 49000 * 10 * 0.5
-    ax.plot(t, P, color='steelblue', linewidth=2, label="Theoretical")
+    ax.plot(t, P, color='steelblue', linewidth=2, label="Theoretical", linestyle=":")
     ax.set_xlabel("Time [s]", fontsize=12)
     ax.set_ylabel("Lift Force [N]", fontsize=12)
     #ax.set_title("Time vs Lift Force", fontsize=13, fontweight="bold")
