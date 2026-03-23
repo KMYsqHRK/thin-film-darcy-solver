@@ -27,9 +27,9 @@ from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import scienceplots
 
-plt.rcParams["font.family"] = "DejaVu Serif"
-plt.rcParams["axes.unicode_minus"] = False
+plt.style.use(['science','ieee'])
 
 FILENAME = "output_lift_forces.csv"
 
@@ -73,7 +73,7 @@ def load(csv_path: Path) -> pd.DataFrame:
 
 
 def plot(cases: list[tuple[str, pd.DataFrame]], out_path: Path) -> None:
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(6, 3))
 
     for label, df in cases:
         ax.plot(df["Time"], df["LiftForce"], label=label, linewidth=1.5)
@@ -82,11 +82,12 @@ def plot(cases: list[tuple[str, pd.DataFrame]], out_path: Path) -> None:
     ax.plot(t, P, color='steelblue', linewidth=2, label="Theoretical")
     ax.set_xlabel("Time [s]", fontsize=12)
     ax.set_ylabel("Lift Force [N]", fontsize=12)
-    ax.set_title("Time vs Lift Force", fontsize=13, fontweight="bold")
+    #ax.set_title("Time vs Lift Force", fontsize=13, fontweight="bold")
     ax.legend(fontsize=10)
     ax.grid(True, linestyle="--", alpha=0.5)
     ax.set_xlim(-0.1, 20)
     ax.set_ylim(0, 1200000)
+    ax.tick_params(axis='both', which='major', labelsize=12)
     plt.tight_layout()
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     print(f"Figure saved: {out_path}")
@@ -115,7 +116,7 @@ def main():
         cases.append((label, df))
         print(f"  loaded: {csv_path}  ({len(df)} rows)")
 
-    out_path = root / "lift_force.png"
+    out_path = root / "lift_force.pdf"
     plot(cases, out_path)
 
 
